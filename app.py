@@ -289,6 +289,7 @@ def _handle_ttt_move(state: dict, player_move):
         }
     )
 
-
-if __name__ == "__main__":
-    app.run(debug=True)
+if __name__ == '__main__':
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
