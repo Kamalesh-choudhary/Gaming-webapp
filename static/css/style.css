@@ -1,0 +1,482 @@
+/* ==========================================================================
+   Design tokens
+   Subject: an AI actively reading/profiling the player -> a dark tactical
+   "readout" console, not a decorative game skin. Amber = the AI's signal /
+   prediction. Cyan = the human / player's own data trace.
+   ========================================================================== */
+:root {
+  --bg: #0b0f14;
+  --surface: #121821;
+  --surface-2: #171f2a;
+  --line: #263140;
+
+  --text-primary: #e7edf2;
+  --text-muted: #7c8a96;
+
+  --signal: #f2b705;   /* AI / prediction */
+  --cool: #3fd0c9;      /* player / human data */
+  --win: #57c785;
+  --lose: #e4636b;
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  font-family: var(--font-body);
+  color: var(--text-primary);
+  background-image:
+    radial-gradient(circle at 15% 0%, rgba(63,208,201,0.07), transparent 45%),
+    radial-gradient(circle at 90% 10%, rgba(242,183,5,0.06), transparent 40%);
+  position: relative;
+}
+
+.text-primary { color: var(--text-primary); }
+.text-muted { color: var(--text-muted); }
+.text-signal { color: var(--signal); }
+.text-cool { color: var(--cool); }
+.mono { font-family: var(--font-mono); }
+.display-face { font-family: var(--font-display); }
+
+/* Subtle scanline texture -- signature "readout" feel, kept very quiet */
+.scanlines {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.012) 0px,
+    rgba(255,255,255,0.012) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------------- Mode toggle ---------------- */
+.mode-toggle {
+  display: inline-flex;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 4px;
+  gap: 4px;
+}
+.mode-btn {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  padding: 8px 14px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  transition: color 0.15s ease, background 0.15s ease;
+  white-space: nowrap;
+}
+.mode-btn:hover { color: var(--text-primary); }
+.mode-btn.active {
+  background: var(--surface-2);
+  color: var(--signal);
+  box-shadow: inset 0 0 0 1px rgba(242,183,5,0.35);
+}
+
+/* ---------------- Scoreboard ---------------- */
+.score-block { display: flex; flex-direction: column; align-items: center; flex: 1; }
+.score-label {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.score-num {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+/* ---------------- RPS ---------------- */
+.rps-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 18px 20px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  transition: transform 0.12s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  min-width: 92px;
+}
+.rps-btn:hover {
+  border-color: var(--cool);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(63,208,201,0.12);
+}
+.rps-btn:active { transform: translateY(0); }
+.rps-btn:disabled { opacity: 0.4; pointer-events: none; }
+.rps-icon { font-size: 2rem; line-height: 1; }
+.rps-label {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.result-line {
+  text-align: center;
+  min-height: 1.4rem;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+.result-win { color: var(--win); }
+.result-lose { color: var(--lose); }
+.result-draw { color: var(--text-muted); }
+
+/* ---------------- Tic-Tac-Toe ---------------- */
+.ttt-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 84px);
+  grid-template-rows: repeat(3, 84px);
+  gap: 6px;
+  transition: opacity 0.2s ease;
+}
+.ttt-grid.thinking { pointer-events: none; opacity: 0.82; }
+@media (max-width: 400px) {
+  .ttt-grid { grid-template-columns: repeat(3, 74px); grid-template-rows: repeat(3, 74px); }
+}
+.ttt-cell {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 600;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.ttt-cell:not(.filled):hover { border-color: var(--cool); cursor: pointer; }
+.ttt-cell.filled { cursor: default; }
+.ttt-cell.x { color: var(--cool); }
+.ttt-cell.o { color: var(--signal); }
+
+/* ---------------- Reset button ---------------- */
+.reset-btn {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  color: var(--text-primary);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  padding: 9px 18px;
+  border-radius: 7px;
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+.reset-btn:hover { border-color: var(--signal); color: var(--signal); }
+
+/* ---------------- Prediction readout (signature element) ---------------- */
+.predict-box {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 14px 16px;
+}
+.predict-move {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--signal);
+}
+.predict-confidence {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.confidence-track {
+  height: 6px;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+.confidence-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--signal), #ffd35c);
+  transition: width 0.35s ease;
+}
+
+/* ---------------- Frequency bars ---------------- */
+.freq-row { display: flex; align-items: center; gap: 8px; }
+.freq-name {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  width: 64px;
+  text-transform: uppercase;
+}
+.freq-track {
+  flex: 1;
+  height: 6px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.freq-fill { height: 100%; background: var(--cool); transition: width 0.35s ease; }
+.freq-pct { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted); width: 38px; text-align: right; }
+
+#freq-bars {
+  max-height: 190px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+#freq-bars::-webkit-scrollbar { width: 5px; }
+#freq-bars::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+
+/* ==========================================================================
+   Motion system
+   One real signature moment: the duel stage, where the player's pick and
+   the AI's counter-move fly in and clash, synced with the prediction box
+   "locking" its read a beat before impact. Everything else (entrance,
+   hover, stamps) stays quiet and short so the duel keeps its weight.
+   ========================================================================== */
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.anim-in {
+  animation: fadeSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.delay-0 { animation-delay: 0s; }
+.delay-1 { animation-delay: 0.08s; }
+.delay-2 { animation-delay: 0.16s; }
+
+/* Ambient background drift -- very slow, very quiet */
+body {
+  background-size: 140% 140%;
+  animation: driftBg 26s ease-in-out infinite alternate;
+}
+@keyframes driftBg {
+  from { background-position: 0% 0%, 100% 0%; }
+  to   { background-position: 8% 6%, 92% 10%; }
+}
+
+/* ---------------- Duel stage (signature) ---------------- */
+.duel-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  height: 84px;
+  margin-bottom: 4px;
+}
+.duel-icon {
+  width: 68px;
+  height: 68px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  opacity: 0;
+  font-size: 2rem;
+}
+.duel-vs {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  opacity: 0;
+}
+.duel-flash {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(242,183,5,0.55), transparent 70%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Triggered by JS adding .fly per round; player enters from left, AI from
+   right, both settle at the same moment the flash pulses at center. */
+.duel-stage.fly .duel-player {
+  animation: flyInLeft 0.5s cubic-bezier(0.2, 0.85, 0.3, 1.15) forwards;
+}
+.duel-stage.fly .duel-ai {
+  animation: flyInRight 0.5s cubic-bezier(0.2, 0.85, 0.3, 1.15) forwards;
+}
+.duel-stage.fly .duel-vs {
+  animation: fadeIn 0.3s ease 0.15s forwards;
+}
+.duel-stage.fly .duel-flash {
+  animation: flashPulse 0.45s ease-out 0.42s forwards;
+}
+.duel-stage.fly .duel-player.result-win,
+.duel-stage.fly .duel-ai.result-win-icon { box-shadow: 0 0 0 1px var(--win), 0 0 22px rgba(87,199,133,0.35); }
+.duel-stage.fly .duel-player.result-lose { box-shadow: 0 0 0 1px var(--lose), 0 0 22px rgba(228,99,107,0.3); }
+
+@keyframes flyInLeft {
+  0%   { opacity: 0; transform: translateX(-46px) rotate(-8deg) scale(0.85); }
+  65%  { opacity: 1; transform: translateX(4px) rotate(2deg) scale(1.05); }
+  100% { opacity: 1; transform: translateX(0) rotate(0) scale(1); }
+}
+@keyframes flyInRight {
+  0%   { opacity: 0; transform: translateX(46px) rotate(8deg) scale(0.85); }
+  65%  { opacity: 1; transform: translateX(-4px) rotate(-2deg) scale(1.05); }
+  100% { opacity: 1; transform: translateX(0) rotate(0) scale(1); }
+}
+@keyframes fadeIn { to { opacity: 1; } }
+@keyframes flashPulse {
+  0%   { opacity: 0; transform: scale(0.5); }
+  55%  { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 0; transform: scale(1.5); }
+}
+
+/* Winner glow settles on whichever icon actually won the round */
+.duel-icon.winner {
+  border-color: var(--win);
+  box-shadow: 0 0 0 1px var(--win), 0 0 24px rgba(87,199,133,0.3);
+}
+.duel-icon.loser { opacity: 0.55 !important; }
+
+/* ---------------- Prediction "lock" state ---------------- */
+.predict-box.scanning .predict-move,
+.predict-box.scanning .predict-confidence { opacity: 0.35; }
+.predict-box.scanning .confidence-fill { animation: scanSweep 0.9s ease-in-out infinite; }
+.predict-box.locked .predict-move { animation: lockPop 0.3s ease; }
+@keyframes scanSweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+@keyframes lockPop {
+  0%   { transform: scale(0.9); color: var(--text-primary); }
+  50%  { transform: scale(1.08); }
+  100% { transform: scale(1); color: var(--signal); }
+}
+
+/* ---------------- Mode toggle sliding indicator ---------------- */
+.mode-toggle { position: relative; }
+.toggle-indicator {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  border-radius: 6px;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px rgba(242,183,5,0.35);
+  transition: transform 0.32s cubic-bezier(0.65, 0, 0.35, 1), width 0.32s cubic-bezier(0.65, 0, 0.35, 1);
+  z-index: 0;
+}
+.mode-btn { position: relative; z-index: 1; }
+
+/* ---------------- Score pulse ---------------- */
+.score-num.pulse { animation: scorePulse 0.5s ease; }
+@keyframes scorePulse {
+  0%   { transform: scale(1); }
+  35%  { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+
+/* ---------------- Tic-Tac-Toe stamp-in + win sweep ---------------- */
+.ttt-cell.stamp {
+  animation: stampIn 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.3) both;
+}
+@keyframes stampIn {
+  0%   { opacity: 0; transform: scale(0.4) rotate(-6deg); }
+  70%  { opacity: 1; transform: scale(1.12) rotate(2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+.ttt-cell.win-cell {
+  animation: winGlow 1.1s ease-in-out infinite;
+  border-color: var(--win) !important;
+}
+@keyframes winGlow {
+  0%, 100% { box-shadow: 0 0 0 rgba(87,199,133,0); }
+  50%      { box-shadow: 0 0 16px rgba(87,199,133,0.55); }
+}
+
+/* ---------------- History log entries ---------------- */
+.history-row.enter {
+  animation: historyIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes historyIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------------- Micro-interactions on existing controls ---------------- */
+.rps-btn:active { transform: translateY(0) scale(0.96); }
+.reset-btn:active { transform: scale(0.96); }
+.ttt-cell:not(.filled):active { transform: scale(0.94); }
+
+/* Visible keyboard focus everywhere */
+button:focus-visible,
+.ttt-cell:focus-visible {
+  outline: 2px solid var(--cool);
+  outline-offset: 2px;
+}
+
+/* ---------------- Reduced motion ---------------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+  body { animation: none; }
+}
+
+/* ---------------- History log ---------------- */
+.history-log {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 180px;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+}
+.history-log::-webkit-scrollbar { width: 5px; }
+.history-log::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+.history-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 5px 8px;
+  background: var(--surface-2);
+  border-radius: 5px;
+  border-left: 2px solid var(--line);
+}
+.history-row.win { border-left-color: var(--win); }
+.history-row.lose { border-left-color: var(--lose); }
+.history-row.draw { border-left-color: var(--text-muted); }
+
+.border-line { border-color: var(--line); }

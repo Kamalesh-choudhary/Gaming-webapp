@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>READ // Opponent-Modeling Game</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body class="min-h-screen text-primary antialiased">
+
+<div class="scanlines"></div>
+
+<div class="max-w-6xl mx-auto px-5 py-8 md:py-12">
+
+  <!-- Header -->
+  <header class="anim-in delay-0 flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
+    <div>
+      <p class="eyebrow">opponent-modeling engine</p>
+      <h1 class="display-face text-3xl md:text-4xl font-semibold tracking-tight">
+        READ<span class="text-signal">//</span>
+      </h1>
+      <p class="text-muted text-sm mt-1 max-w-md">
+        Every move you make trains the model across from you. Rock-Paper-Scissors and
+        Tic-Tac-Toe, played against an AI that's watching your habits, not just the rules.
+      </p>
+    </div>
+
+    <!-- Mode toggle -->
+    <div class="mode-toggle" role="tablist" aria-label="Game mode">
+      <span id="toggle-indicator" class="toggle-indicator" aria-hidden="true"></span>
+      <button id="mode-rps" class="mode-btn active" role="tab" aria-selected="true">Rock · Paper · Scissors</button>
+      <button id="mode-ttt" class="mode-btn" role="tab" aria-selected="false">Tic-Tac-Toe</button>
+    </div>
+  </header>
+
+  <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-6">
+
+    <!-- Main play area -->
+    <main class="panel anim-in delay-1 p-5 md:p-7">
+
+      <!-- Scoreboard -->
+      <div class="flex items-center justify-between mb-6">
+        <div class="score-block">
+          <span class="score-label">you</span>
+          <span id="score-player" class="score-num text-cool">0</span>
+        </div>
+        <div class="score-block text-center">
+          <span class="score-label">draws</span>
+          <span id="score-draws" class="score-num text-muted">0</span>
+        </div>
+        <div class="score-block text-right">
+          <span class="score-label">ai</span>
+          <span id="score-ai" class="score-num text-signal">0</span>
+        </div>
+      </div>
+
+      <!-- RPS board -->
+      <section id="rps-board" class="game-area">
+        <!-- Duel stage: this is where the pick lands and clashes with the AI's counter -->
+        <div id="duel-stage" class="duel-stage">
+          <div id="duel-player" class="duel-icon duel-player">
+            <span class="duel-emoji">🪨</span>
+          </div>
+          <span class="duel-vs">VS</span>
+          <div id="duel-ai" class="duel-icon duel-ai">
+            <span class="duel-emoji">🪨</span>
+          </div>
+          <div id="duel-flash" class="duel-flash" aria-hidden="true"></div>
+        </div>
+
+        <div class="flex items-center justify-center gap-4 md:gap-6 py-6">
+          <button class="rps-btn" data-move="rock" aria-label="Rock">
+            <span class="rps-icon">🪨</span><span class="rps-label">rock</span>
+          </button>
+          <button class="rps-btn" data-move="paper" aria-label="Paper">
+            <span class="rps-icon">📄</span><span class="rps-label">paper</span>
+          </button>
+          <button class="rps-btn" data-move="scissors" aria-label="Scissors">
+            <span class="rps-icon">✂️</span><span class="rps-label">scissors</span>
+          </button>
+        </div>
+
+        <div id="rps-result" class="result-line" aria-live="polite">
+          <span class="text-muted text-sm">Make the first move — the model has nothing to read yet.</span>
+        </div>
+      </section>
+
+      <!-- Tic-Tac-Toe board -->
+      <section id="ttt-board" class="game-area hidden">
+        <div class="flex flex-col items-center py-4">
+          <div id="ttt-grid" class="ttt-grid" aria-label="Tic-tac-toe board"></div>
+          <div id="ttt-result" class="result-line mt-4" aria-live="polite">
+            <span class="text-muted text-sm">You're X, first move is yours. The AI plays perfectly optimal minimax — but it still profiles your habits.</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="flex justify-center mt-4">
+        <button id="new-game-btn" class="reset-btn">New Round</button>
+      </div>
+    </main>
+
+    <!-- Opponent model readout -->
+    <aside class="panel anim-in delay-2 p-5 md:p-6 flex flex-col gap-6">
+      <div>
+        <p class="eyebrow mb-3">live prediction</p>
+        <div id="predict-box" class="predict-box">
+          <div class="flex items-baseline justify-between">
+            <span id="predict-move" class="predict-move">—</span>
+            <span id="predict-confidence" class="predict-confidence">0%</span>
+          </div>
+          <div class="confidence-track mt-2">
+            <div id="confidence-fill" class="confidence-fill" style="width:0%"></div>
+          </div>
+          <p id="predict-caption" class="text-xs text-muted mt-2">the AI's read on your <em>next</em> move, before it commits to its own</p>
+        </div>
+      </div>
+
+      <div>
+        <p class="eyebrow mb-3">move frequency</p>
+        <div id="freq-bars" class="flex flex-col gap-2"></div>
+      </div>
+
+      <div>
+        <p class="eyebrow mb-3">session log</p>
+        <div id="history-log" class="history-log"></div>
+      </div>
+
+      <div class="text-xs text-muted leading-relaxed border-t border-line pt-4">
+        <span class="text-cool font-medium">total moves tracked:</span>
+        <span id="total-moves">0</span>
+      </div>
+    </aside>
+  </div>
+
+  <footer class="mt-10 text-center text-xs text-muted">
+    Flask + a frequency / Markov-chain opponent model · session
+    <span id="session-id-display" class="mono">—</span>
+  </footer>
+</div>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
