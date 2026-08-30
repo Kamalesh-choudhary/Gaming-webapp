@@ -8,6 +8,8 @@ rules.
 Flask REST API backend, vanilla HTML/CSS/JS frontend (no build step, no
 page reloads), server-side per-session state.
 
+### Live Link:
+  Play the Game: (https://gaming-webapp.onrender.com/)
 ## Quick start
 
 ```bash
