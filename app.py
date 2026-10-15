@@ -288,6 +288,9 @@ def _handle_ttt_move(state: dict, player_move):
             "round": round_summary["round"],
         }
     )
+@app.get("/health")
+def health():
+    return {"status": "ok"}
 
 if __name__ == '__main__':
     import os
